@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ShareYourVoice</string>
+    <string name="playbtn0">playBtn0</string>
+    <string name="nameOfPlace">Name</string>
+    <string name="adressOfPlace">Adress</string>
+    <string name="placephoto">placePhoto</string>
+</resources>
