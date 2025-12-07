@@ -156,7 +156,7 @@ public class MapService implements OnMapReadyCallback, GoogleMap.OnMapClickListe
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
-//        googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_night));
+        googleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Place");
         query.findInBackground((objects, e) -> {
             if (e == null) {

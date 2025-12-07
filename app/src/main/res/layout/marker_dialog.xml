@@ -27,6 +27,7 @@
             android:src="@drawable/play"
             android:background="@android:color/transparent"
             android:contentDescription="@string/playbtn0"
+            android:scaleType="centerInside"
             android:layout_width="50dp"
             android:layout_height="50dp"/>
 

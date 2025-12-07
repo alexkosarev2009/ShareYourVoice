@@ -4,4 +4,5 @@
     <string name="nameOfPlace">Name</string>
     <string name="adressOfPlace">Adress</string>
     <string name="placephoto">placePhoto</string>
+    <string name="add_marker">Add Marker</string>
 </resources>
