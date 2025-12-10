@@ -20,6 +20,7 @@ import androidx.fragment.app.DialogFragment;
 import com.example.shareyourvoice.databinding.ActivityMainBinding;
 import com.example.shareyourvoice.databinding.ActivityMapBinding;
 import com.example.shareyourvoice.dialogs.MarkerCreationFragment;
+import com.example.shareyourvoice.handlers.CreateMarkerButtonsHandler;
 import com.example.shareyourvoice.services.MapService;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -37,6 +38,8 @@ public class MapActivity extends AppCompatActivity {
 
     private GoogleMap map;
 
+    private CreateMarkerButtonsHandler handler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +48,7 @@ public class MapActivity extends AppCompatActivity {
 
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        handler = new CreateMarkerButtonsHandler(binding);
 
         SupportMapFragment fragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.googleMap);
         Objects.requireNonNull(fragment).getMapAsync(new MapService(this));
@@ -57,20 +61,22 @@ public class MapActivity extends AppCompatActivity {
 
         // Логика добавления маркера
 
-        binding.addMarkerButton.setOnClickListener(v -> {
-            binding.addMarkerButton.setVisibility(GONE);
-            binding.cancelButton.setVisibility(VISIBLE);
-            binding.confirmButton.setVisibility(VISIBLE);
-            binding.abstractMarker.setVisibility(VISIBLE);
+        handler.setUpButtons();
 
-        });
-
-        binding.cancelButton.setOnClickListener(v -> {
-            binding.cancelButton.setVisibility(GONE);
-            binding.confirmButton.setVisibility(GONE);
-            binding.abstractMarker.setVisibility(GONE);
-            binding.addMarkerButton.setVisibility(VISIBLE);
-        });
+//        binding.addMarkerButton.setOnClickListener(v -> {
+//            binding.addMarkerButton.setVisibility(GONE);
+//            binding.cancelButton.setVisibility(VISIBLE);
+//            binding.confirmButton.setVisibility(VISIBLE);
+//            binding.abstractMarker.setVisibility(VISIBLE);
+//
+//        });
+//
+//        binding.cancelButton.setOnClickListener(v -> {
+//            binding.cancelButton.setVisibility(GONE);
+//            binding.confirmButton.setVisibility(GONE);
+//            binding.abstractMarker.setVisibility(GONE);
+//            binding.addMarkerButton.setVisibility(VISIBLE);
+//        });
 
 //        binding.confirmButton.setOnClickListener(v -> {
 //            LatLng position = map.getCameraPosition().target;

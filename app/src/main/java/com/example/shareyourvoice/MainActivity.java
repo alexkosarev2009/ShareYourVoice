@@ -3,8 +3,10 @@ package com.example.shareyourvoice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,6 +27,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         button = findViewById(R.id.button);
-        button.setOnClickListener(v -> startActivity(new Intent(this, MapActivity.class)));
+        button.setOnClickListener(v -> {
+            startActivity(new Intent(this, MapActivity.class));
+            finish();
+        });
+    }
+
+    @NonNull
+    @Override
+    public OnBackInvokedDispatcher getOnBackInvokedDispatcher() {
+        return super.getOnBackInvokedDispatcher();
     }
 }
