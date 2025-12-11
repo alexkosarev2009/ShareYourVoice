@@ -19,7 +19,6 @@ import com.bumptech.glide.Glide;
 import com.example.shareyourvoice.R;
 import com.example.shareyourvoice.domain.Place;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -31,15 +30,18 @@ import com.parse.ParseQuery;
 import java.io.IOException;
 import java.util.Objects;
 
-public class MapService implements OnMapReadyCallback, GoogleMap.OnMapClickListener,
+public class MapService implements GoogleMap.OnMapClickListener,
         GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
 
     private final Context context;
     private BottomSheetDialog dialog = null;
 
+    private GoogleMap googleMap;
+
     public MapService(Context context) {
         this.context = context;
     }
+
     @Override
     public void onMapClick(@NonNull LatLng latLng) {
 
@@ -66,7 +68,7 @@ public class MapService implements OnMapReadyCallback, GoogleMap.OnMapClickListe
 
         ImageView imageView = dialog.findViewById(R.id.placeImage);
         TextView tvName = dialog.findViewById(R.id.placeName);
-        TextView tvAdress = dialog.findViewById(R.id.placeAdress);
+        TextView tvAdress = dialog.findViewById(R.id.tvGoToGoogleMaps);
         TextView timeLabel = dialog.findViewById(R.id.timeLabel);
         ImageButton btnPlay = dialog.findViewById(R.id.btnPlay);
         SeekBar seekBar = dialog.findViewById(R.id.audioSeekBar);
@@ -154,27 +156,32 @@ public class MapService implements OnMapReadyCallback, GoogleMap.OnMapClickListe
         return false;
     }
 
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
+    public void attachMap(GoogleMap map) {
+        this.googleMap = map;
+    }
+
+    public void setup() {
         googleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Place");
         query.findInBackground((objects, e) -> {
             if (e == null) {
                 for (ParseObject obj : objects) {
                     Place place = Place.fromParseObject(obj);
-                    Marker marker = googleMap.addMarker(new MarkerOptions()
-                            .position(place.getLatLng())
-                            .title(place.getName())
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_orange)));
+
+                    Marker marker = googleMap.addMarker(
+                            new MarkerOptions()
+                                    .position(place.getLatLng())
+                                    .title(place.getName())
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_orange))
+                    );
                     Objects.requireNonNull(marker).setTag(place);
                 }
-            } else {
-                e.printStackTrace();
             }
         });
+
         googleMap.setOnMapClickListener(this);
         googleMap.setOnMapLongClickListener(this);
         googleMap.setOnMarkerClickListener(this);
-
     }
 }
