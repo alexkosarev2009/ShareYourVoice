@@ -1,9 +1,21 @@
 <resources>
-    <string name="app_name">ShareYourVoice</string>
-    <string name="playbtn0">playBtn0</string>
-    <string name="nameOfPlace">Name</string>
-    <string name="goToGoogleMaps">Go to GoogleMaps</string>
-    <string name="placephoto">placePhoto</string>
+    <string name="app_name" translatable="false">ShareYourVoice</string>
+    <string name="playbtn0">Play</string>
+    <string name="name_of_place">Name</string>
+    <string name="go_to_google_maps">Go to GoogleMaps</string>
+    <string name="place_photo">placePhoto</string>
     <string name="add_marker">Add Marker</string>
     <string name="add_marker_q">Add Marker ?</string>
+    <string name="attach_photo">Attach Photo</string>
+    <string name="image">Image</string>
+    <string name="too_close">Too close to another place</string>
+    <string name="delete_marker">Delete Marker</string>
+    <string name="record">Record</string>
+    <string name="place_marker">Place Marker</string>
+    <string name="prohibited_symbols">Prohibited Symbols\n</string>
+    <string name="name_too_short">Name is too short!\n</string>
+    <string name="name_too_long">Name is too Long!</string>
+    <string name="marker_placed">Marker Placed!\n</string>
+    <string name="parse_error">Marker Placement Error\n</string>
+    <string name="audio_error">Record a voice message!\n</string>
 </resources>

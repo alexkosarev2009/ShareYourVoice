@@ -1,24 +1,32 @@
 package com.example.shareyourvoice.services;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.os.Handler;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
 import com.example.shareyourvoice.R;
 import com.example.shareyourvoice.domain.Place;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -28,6 +36,7 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class MapService implements GoogleMap.OnMapClickListener,
@@ -37,6 +46,12 @@ public class MapService implements GoogleMap.OnMapClickListener,
     private BottomSheetDialog dialog = null;
 
     private GoogleMap googleMap;
+
+    private MediaRecorder recorder;
+
+    private boolean isRecording = false;
+
+    private final ArrayList<Marker> markers = new ArrayList<>();
 
     public MapService(Context context) {
         this.context = context;
@@ -54,9 +69,84 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
     @Override
     public boolean onMarkerClick(@NonNull Marker marker) {
+
         if (dialog != null && dialog.isShowing()) return true;
-        Place place = (Place) marker.getTag();
-        if (place == null) return false;
+
+        Object tag = marker.getTag();
+        if (!(tag instanceof Place)) return false;
+        Place place = (Place) tag;
+
+        if (place.getObjectId() == null) {
+            dialog = new BottomSheetDialog(context);
+            dialog.setContentView(R.layout.create_marker_dialog);
+            Objects.requireNonNull(dialog.getWindow()).setGravity(Gravity.BOTTOM);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setDimAmount(0f);
+            dialog.show();
+
+            ImageButton btnRecord = dialog.findViewById(R.id.recordButton);
+            ImageButton btnDelete = dialog.findViewById(R.id.deleteMarker);
+            ImageButton btnPlace = dialog.findViewById(R.id.placeMarker);
+            EditText etName = dialog.findViewById(R.id.markerNameInput);
+            TextView tvError = dialog.findViewById(R.id.tvError);
+
+            Objects.requireNonNull(btnRecord).setOnClickListener(view -> {
+
+                if (!isRecording) {
+//                    recorder.start();
+                    btnRecord.setImageResource(R.drawable.stop_recording);
+                }
+                if (isRecording) {
+//                    recorder.stop();
+                    btnRecord.setImageResource(R.drawable.record);
+
+                }
+                isRecording = !isRecording;
+
+            });
+
+            Objects.requireNonNull(btnDelete).setOnClickListener(view -> {
+                Objects.requireNonNull(marker).remove();
+                markers.remove(marker);
+                dialog.dismiss();
+
+            });
+
+            Objects.requireNonNull(btnPlace).setOnClickListener(view -> {
+                String name = Objects.requireNonNull(etName).getText().toString();
+
+                switch (EtCorrect(name)) {
+                    case 0:
+                        if (Objects.requireNonNull(tvError).getVisibility() == VISIBLE) tvError.setVisibility(GONE);
+                        if (place.getAudioFile() != null) {
+                            place.saveToParse(e -> {
+                                if (e == null) {
+                                    marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_orange));
+                                    Toast.makeText(context, R.string.marker_placed, Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(context, R.string.parse_error + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        else {
+                            Toast.makeText(context, R.string.audio_error, Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+                    case 1:
+                        Objects.requireNonNull(tvError).setText(R.string.prohibited_symbols);
+                        tvError.setVisibility(VISIBLE);
+                        break;
+                    case 2:
+                        Objects.requireNonNull(tvError).setText(R.string.name_too_long);
+                        tvError.setVisibility(VISIBLE);
+                        break;
+                    case 3:
+                        Objects.requireNonNull(tvError).setText(R.string.name_too_short);
+                        tvError.setVisibility(VISIBLE);
+                }
+            });
+            return false;
+        }
 
         dialog = new BottomSheetDialog(context);
         dialog.setContentView(R.layout.marker_dialog);
@@ -66,15 +156,15 @@ public class MapService implements GoogleMap.OnMapClickListener,
         dialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         dialog.show();
 
+
+
         ImageView imageView = dialog.findViewById(R.id.placeImage);
         TextView tvName = dialog.findViewById(R.id.placeName);
-        TextView tvAdress = dialog.findViewById(R.id.tvGoToGoogleMaps);
         TextView timeLabel = dialog.findViewById(R.id.timeLabel);
         ImageButton btnPlay = dialog.findViewById(R.id.btnPlay);
         SeekBar seekBar = dialog.findViewById(R.id.audioSeekBar);
 
         Objects.requireNonNull(tvName).setText(place.getName());
-        Objects.requireNonNull(tvAdress).setText(place.getAddress());
 
         if (place.getImageFile() != null) {
             String url = place.getImageFile().getUrl();
@@ -176,6 +266,7 @@ public class MapService implements GoogleMap.OnMapClickListener,
                                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_orange))
                     );
                     Objects.requireNonNull(marker).setTag(place);
+                    markers.add(marker);
                 }
             }
         });
@@ -183,5 +274,37 @@ public class MapService implements GoogleMap.OnMapClickListener,
         googleMap.setOnMapClickListener(this);
         googleMap.setOnMapLongClickListener(this);
         googleMap.setOnMarkerClickListener(this);
+    }
+
+    public void addMarker(Marker marker) {
+        markers.add(marker);
+    }
+    public void removeMarker(Marker marker) {
+        markers.remove(marker);
+    }
+    public ArrayList<Marker> getMarkers() {
+        return markers;
+    }
+
+    public void mapZoomIn(int zoom) {
+        if (googleMap != null) {
+            float currentZoom = googleMap.getCameraPosition().zoom;
+            googleMap.animateCamera(CameraUpdateFactory.zoomTo(currentZoom + zoom));
+        }
+    }
+    public void mapZoomOut(int zoom) {
+        if (googleMap != null) {
+            float currentZoom = googleMap.getCameraPosition().zoom;
+            googleMap.animateCamera(CameraUpdateFactory.zoomTo(currentZoom - zoom));
+        }
+    }
+
+    private int EtCorrect(String s) {
+        for (char c: s.strip().toCharArray()) {
+            if (!(Character.isLetter(c) || c == ' ')) return 1;
+        }
+        if (s.length() > 15) return 2;
+        if (s.length() < 5) return 3;
+        return 0;
     }
 }

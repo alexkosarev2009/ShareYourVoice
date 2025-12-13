@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playbtn0">Воспроизвести</string>
+    <string name="name_of_place">Название</string>
+    <string name="go_to_google_maps">Перейти в гугл карты</string>
+    <string name="place_photo">Фото места</string>
+    <string name="add_marker">Добавить маркер</string>
+    <string name="add_marker_q">Добавить маркер?</string>
+    <string name="attach_photo">Прикрепить фото</string>
+    <string name="image">Фото</string>
+    <string name="too_close">Слишком близко к другому маркеру!</string>
+    <string name="delete_marker">Удалить маркер</string>
+    <string name="record">Начать запись</string>
+    <string name="place_marker">Сохранить маркер</string>
+    <string name="prohibited_symbols">Запрещённые симловы</string>
+    <string name="name_too_short">Имя слишком короткое!</string>
+    <string name="name_too_long">Имя слишком длинное!</string>
+    <string name="marker_placed">Маркер сохранён!</string>
+    <string name="parse_error">Ошибка при установке маркера</string>
+    <string name="audio_error">Запишите голосовое!</string>
+</resources>
