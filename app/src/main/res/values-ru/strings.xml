@@ -18,4 +18,5 @@
     <string name="marker_placed">Маркер сохранён!</string>
     <string name="parse_error">Ошибка при установке маркера</string>
     <string name="audio_error">Запишите голосовое!</string>
+    <string name="stopRecordingWarning">Закончите запись!</string>
 </resources>

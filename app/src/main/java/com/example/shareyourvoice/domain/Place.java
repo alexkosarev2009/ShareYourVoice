@@ -11,9 +11,9 @@ import java.util.Objects;
 public class Place {
     private String objectId;
 
-    private final String name;
-    private final ParseFile imageFile;
-    private final ParseFile audioFile;
+    private String name;
+    private ParseFile imageFile;
+    private ParseFile audioFile;
     private final LatLng latLng;
 
     public Place(String  name, LatLng latLng, ParseFile imageFile, ParseFile audioFile) {
@@ -93,5 +93,15 @@ public class Place {
 
     public ParseFile getAudioFile() {
         return audioFile;
+    }
+    public void setAudioFile(ParseFile file) {
+        this.audioFile = file;
+    }
+    public void setImageFile(ParseFile file) {
+        this.imageFile = file;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

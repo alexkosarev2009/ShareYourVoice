@@ -7,12 +7,14 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.example.shareyourvoice.databinding.ActivityMapBinding;
 import com.example.shareyourvoice.domain.Place;
 import com.example.shareyourvoice.services.MapService;
@@ -34,6 +36,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private MapService mapService;
 
+    ActivityResultLauncher<PickVisualMediaRequest> pickVisualMedia = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+        if (uri != null) {
+            mapService.setUriForImageView(uri);
+            mapService.setUri(uri);
+        } else {
+            Toast.makeText(this, "Выберите изображение", Toast.LENGTH_SHORT).show();
+        }
+    });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,7 +53,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        mapService = new MapService(this);
+        mapService = new MapService(this, pickVisualMedia);
 
         SupportMapFragment fragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.googleMap);
@@ -103,43 +114,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             else {
                 showToast(R.string.too_close);
             }
-
-            binding.btnZoomIn.setOnClickListener(view -> mapService.mapZoomIn(1));
-            binding.btnZoomOut.setOnClickListener(view -> mapService.mapZoomOut(1));
-
-
-//            dialog = new BottomSheetDialog(this);
-//            dialog.setContentView(R.layout.create_marker_dialog);
-//            Objects.requireNonNull(dialog.getWindow()).setGravity(Gravity.BOTTOM);
-//            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-//            dialog.getWindow().setDimAmount(0f);
-//            dialog.show();
-//
-//            ImageButton btnRecord = dialog.findViewById(R.id.recordButton);
-//            ImageButton btnDelete = dialog.findViewById(R.id.deleteMarker);
-//            ImageButton btnPlace = dialog.findViewById(R.id.placeMarker);
-//
-//            Objects.requireNonNull(btnRecord).setOnClickListener(view -> {
-//                btnRecord.setImageResource(R.drawable.stop_recording);
-//
-//            });
-//
-//            Objects.requireNonNull(btnDelete).setOnClickListener(view -> {
-//                Objects.requireNonNull(tempMarker).remove();
-//                dialog.dismiss();
-//
-//            });
-//
-//            Objects.requireNonNull(btnPlace).setOnClickListener(view -> {
-//
-//            });
-
-
-
-
-
-
         });
+        binding.btnZoomIn.setOnClickListener(view -> mapService.mapZoomIn(1));
+        binding.btnZoomOut.setOnClickListener(view -> mapService.mapZoomOut(1));
     }
 
     @Override
@@ -175,6 +152,4 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         toast = Toast.makeText(this, resId, Toast.LENGTH_SHORT);
         toast.show();
     }
-
-
 }

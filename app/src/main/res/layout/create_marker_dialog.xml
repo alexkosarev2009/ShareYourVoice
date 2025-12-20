@@ -64,12 +64,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingTop="5dp"
+            android:paddingTop="10dp"
             >
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:id="@+id/userImage"
+            android:layout_width="300dp"
+            android:layout_height="200dp"
+            android:scaleType="centerInside"
+            android:clipToOutline="true"
             android:src="@drawable/image"
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="10dp"
@@ -77,6 +80,10 @@
 
             />
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" >
 
             <ImageButton
                 android:id="@+id/attachPhotoButton"
@@ -84,10 +91,42 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="10dp"
+                android:layout_marginEnd="10dp"
                 android:background="@android:color/transparent"
                 android:contentDescription="@string/attach_photo"
                 android:src="@drawable/ic_plus"
-                tools:ignore="TouchTargetSizeCheck" />
+                tools:ignore="TouchTargetSizeCheck"
+                android:visibility="visible"
+                />
+
+            <ImageButton
+                android:id="@+id/btnDeletePhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="10dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/attach_photo"
+                android:src="@drawable/ic_delete"
+                tools:ignore="TouchTargetSizeCheck"
+                android:visibility="gone"
+                />
+            <ImageButton
+                android:id="@+id/confirmPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/attach_photo"
+                android:src="@drawable/ic_confirm"
+                android:tint="@color/grey"
+                tools:ignore="TouchTargetSizeCheck"
+                android:visibility="gone"
+                />
+
+            </LinearLayout>
 
         </LinearLayout>
 

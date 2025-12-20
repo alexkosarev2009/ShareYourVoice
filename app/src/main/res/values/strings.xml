@@ -18,4 +18,5 @@
     <string name="marker_placed">Marker Placed!\n</string>
     <string name="parse_error">Marker Placement Error\n</string>
     <string name="audio_error">Record a voice message!\n</string>
+    <string name="stopRecordingWarning">finish recording!</string>
 </resources>

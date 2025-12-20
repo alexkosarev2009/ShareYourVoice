@@ -9,6 +9,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        dataBinding = true
     }
 
     defaultConfig {
@@ -37,13 +38,12 @@ android {
 }
 
 dependencies {
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation("com.google.android.gms:play-services-maps:19.2.0")
     implementation ("com.github.parse-community.Parse-SDK-Android:parse:4.3.0")
-    implementation ("com.github.bumptech.glide:glide:4.15.1")
-    implementation("androidx.activity:activity:1.6.0-alpha05")
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    implementation("androidx.activity:activity:1.12.1")
+
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
