@@ -1,28 +1,44 @@
 package com.example.shareyourvoice.domain;
 
+import android.util.Log;
+
 import com.google.android.gms.maps.model.LatLng;
-import com.parse.ParseFile;
+import com.parse.ParseCloud;
+import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.SaveCallback;
 
-import java.util.Objects;
+import java.util.HashMap;
 
 public class Place {
     private String objectId;
 
     private String name;
-    private ParseFile imageFile;
-    private ParseFile audioFile;
     private final LatLng latLng;
-
-    public Place(String  name, LatLng latLng, ParseFile imageFile, ParseFile audioFile) {
+    private String audioBase64;
+    private String imageBase64;
+    public Place(String  name, LatLng latLng) {
         this.name = name;
         this.latLng = latLng;
-        this.imageFile = imageFile;
-        this.audioFile = audioFile;
     }
 
+    public String getAudioBase64() {
+        return audioBase64;
+    }
+
+    public void setAudioBase64(String audioBase64) {
+        this.audioBase64 = audioBase64;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
+    }
+    // Загрузка из Cloud Function
     public static Place fromParseObject(ParseObject obj) {
         ParseGeoPoint geo = obj.getParseGeoPoint("latLng");
 
@@ -33,43 +49,42 @@ public class Place {
 
         Place place = new Place(
                 obj.getString("name"),
-                latLng,
-                obj.getParseFile("image"),
-                obj.getParseFile("audio")
+                latLng
+
         );
         place.setObjectId(obj.getObjectId());
         return place;
     }
 
+    // Сохранение через Cloud Function
     public void saveToParse(SaveCallback callback) {
-        ParseObject obj = new ParseObject("Place");
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("name", name);
+        params.put("latitude", latLng.latitude);
+        params.put("longitude", latLng.longitude);
 
-        if (objectId != null) {
-            obj.setObjectId(objectId);
+        if (audioBase64 != null && !audioBase64.isEmpty()) {
+            params.put("audioBase64", audioBase64);
         }
 
-        obj.put("name", name);
-
-        if (latLng != null) {
-            obj.put("latLng", new ParseGeoPoint(latLng.latitude, latLng.longitude));
+        if (imageBase64 != null && !imageBase64.isEmpty()) {
+            params.put("imageBase64", imageBase64);
         }
 
-        if (imageFile != null) {
-            obj.put("image", imageFile);
-        }
+        ParseCloud.callFunctionInBackground("savePlaceWithFiles", params,
+                (object, e) -> {
+                    if (e == null && object != null) {
+                        HashMap<String, Object> result = (HashMap<String, Object>) object;
 
-        if (audioFile != null) {
-            obj.put("audio", audioFile);
-        }
-
-        obj.saveInBackground(e -> {
-            if (e == null) {
-                this.objectId = obj.getObjectId();
-            }
-            if (callback != null) {
-                callback.done(e);
-            }
-        });
+                        String objectId = (String) result.get("objectId");
+                        this.objectId = objectId;
+                        Log.d("SAVE", "Place saved via Cloud Code: " + objectId);
+                        callback.done(null);
+                    } else {
+                        Log.e("SAVE", "Cloud Function error", e);
+                        callback.done(e != null ? e : new ParseException(0, "Unknown error"));
+                    }
+                });
     }
 
     public void setObjectId(String objectId) {
@@ -85,20 +100,6 @@ public class Place {
 
     public LatLng getLatLng() {
         return latLng;
-    }
-
-    public ParseFile getImageFile() {
-        return imageFile;
-    }
-
-    public ParseFile getAudioFile() {
-        return audioFile;
-    }
-    public void setAudioFile(ParseFile file) {
-        this.audioFile = file;
-    }
-    public void setImageFile(ParseFile file) {
-        this.imageFile = file;
     }
 
     public void setName(String name) {

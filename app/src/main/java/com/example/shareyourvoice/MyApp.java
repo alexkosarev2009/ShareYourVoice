@@ -2,9 +2,7 @@ package com.example.shareyourvoice;
 
 import android.app.Application;
 
-import com.example.shareyourvoice.domain.Place;
 import com.parse.Parse;
-import com.parse.ParseObject;
 import com.parse.ParseUser;
 
 

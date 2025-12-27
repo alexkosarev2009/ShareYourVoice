@@ -24,4 +24,8 @@ public class CreateMarkerDialog extends BottomSheetDialog {
         });
         builder.show();
     }
+
+    public void superDismiss() {
+        super.dismiss();
+    }
 }

@@ -91,9 +91,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             Place draftPlace = new Place(
                     "Новая метка",
-                    position,
-                    null,
-                    null
+                    position
             );
 
             if (canPlaceMarker(position, minDistance)) {

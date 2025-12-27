@@ -42,15 +42,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
-import com.parse.SaveCallback;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.io.File;
@@ -72,7 +71,7 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
     private Uri uri;
 
-    private ActivityResultLauncher<PickVisualMediaRequest> pickVisualMedia;
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickVisualMedia;
     private final ArrayList<Marker> markers = new ArrayList<>();
 
 
@@ -121,21 +120,21 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
             Objects.requireNonNull(confirmPhoto).setOnClickListener(v -> {
                 try {
-                    uriToParseFile(context, getUri(), place);
+                    uriToBase64(getUri(), place);
                     Toast.makeText(context, "Изображение Загружено!", Toast.LENGTH_SHORT).show();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
 
-            Objects.requireNonNull(btnAttachPhoto).setOnClickListener(view -> {
-                pickVisualMedia.launch(new PickVisualMediaRequest.Builder().
-                        setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE).
-                        build());
-            });
+            Objects.requireNonNull(btnAttachPhoto).setOnClickListener(view ->
+                    pickVisualMedia.launch(new PickVisualMediaRequest.Builder().
+                    setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE).
+                    build()));
 
             Objects.requireNonNull(btnDeletePhoto).setOnClickListener(v -> {
                 Objects.requireNonNull(userPhoto).setImageURI(null);
+                place.setImageBase64(null);
                 userPhoto.setImageResource(R.drawable.image);
                 btnAttachPhoto.setVisibility(VISIBLE);
                 btnDeletePhoto.setVisibility(GONE);
@@ -153,7 +152,7 @@ public class MapService implements GoogleMap.OnMapClickListener,
                 }
 
                 if (!isRecording) {
-                    startRecording(recordTimer, place);
+                    startRecording(recordTimer);
                     btnRecord.setImageResource(R.drawable.stop_recording);
                 } else {
                     stopRecording(place);
@@ -177,14 +176,17 @@ public class MapService implements GoogleMap.OnMapClickListener,
                 switch (etCorrect(name)) {
                     case 0:
                         place.setName(name);
-                        if (Objects.requireNonNull(tvError).getVisibility() == VISIBLE) tvError.setVisibility(GONE);
+                        if (Objects.requireNonNull(tvError).getVisibility() == VISIBLE)
+                            tvError.setVisibility(GONE);
 
-                        if (place.getAudioFile() == null) {
+                        // Проверяем аудио
+                        if (place.getAudioBase64() == null || place.getAudioBase64().isEmpty()) {
                             Toast.makeText(context,
-                                        R.string.audio_error,
-                                        Toast.LENGTH_SHORT).show();
+                                    R.string.audio_error,
+                                    Toast.LENGTH_SHORT).show();
                             return;
                         }
+
                         if (isRecording) {
                             Toast.makeText(context,
                                     R.string.stopRecordingWarning,
@@ -192,29 +194,36 @@ public class MapService implements GoogleMap.OnMapClickListener,
                             return;
                         }
 
-                        Uri imageUri = getUri();
-
-                        if (imageUri != null) {
-                            if (place.getImageFile() == null) {
-                                Toast.makeText(context, "Изображение не загружено", Toast.LENGTH_LONG).show();
+                        // Проверяем изображение
+                        if (uri != null && !(place.getImageBase64() == null || place.getImageBase64().isEmpty())) {
+                            try {
+                                uriToBase64(uri, place);
+                            } catch (IOException e) {
+                                Toast.makeText(context,
+                                        "Ошибка загрузки изображения",
+                                        Toast.LENGTH_SHORT).show();
                                 return;
                             }
-                            place.saveToParse(e -> {
-                                if (e == null) {
-                                    marker.setIcon(BitmapDescriptorFactory
-                                            .fromResource(R.drawable.marker_orange));
-                                    Toast.makeText(context,
-                                            R.string.marker_placed,
-                                            Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                } else {
-                                    Toast.makeText(context,
-                                            e.getMessage(),
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                        } else {
+                            Toast.makeText(context, "Добавьте изображение", Toast.LENGTH_LONG).show();
+                            return;
                         }
-
+                        place.saveToParse(e -> {
+                            if (e == null) {
+                                marker.setIcon(BitmapDescriptorFactory
+                                        .fromResource(R.drawable.marker_orange));
+                                marker.setTitle(place.getName());
+                                Toast.makeText(context,
+                                        R.string.marker_placed,
+                                        Toast.LENGTH_SHORT).show();
+                                ((CreateMarkerDialog)dialog).superDismiss();
+                            } else {
+                                Log.e("SAVE_ERROR", "Ошибка сохранения:", e);
+                                Toast.makeText(context,
+                                        "Ошибка сохранения: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         break;
                     case 1:
                         Objects.requireNonNull(tvError).setText(R.string.prohibited_symbols);
@@ -227,6 +236,7 @@ public class MapService implements GoogleMap.OnMapClickListener,
                     case 3:
                         Objects.requireNonNull(tvError).setText(R.string.name_too_short);
                         tvError.setVisibility(VISIBLE);
+                        break;
                 }
             });
             return false;
@@ -250,26 +260,52 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
         Objects.requireNonNull(tvName).setText(place.getName());
 
-        if (place.getImageFile() != null) {
-            String url = place.getImageFile().getUrl();
-            Glide.with(context).load(url).into(Objects.requireNonNull(imageView));
-        }
-
         final MediaPlayer mediaPlayer = new MediaPlayer();
         final Handler handler = new Handler();
         final boolean[] isPlaying = {false};
 
-        if (place.getAudioFile() != null) {
+        // Отображение изображения из Base64
+        if (place.getImageBase64() != null && !place.getImageBase64().isEmpty()) {
             try {
-                mediaPlayer.setDataSource(place.getAudioFile().getUrl());
-                mediaPlayer.setOnPreparedListener(mp ->
-                        Objects.requireNonNull(seekBar).setMax(mediaPlayer.getDuration()));
+                byte[] imageBytes = base64ToBytes(place.getImageBase64());
+                Glide.with(context)
+                        .load(imageBytes)
+                        .into(Objects.requireNonNull(imageView));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Воспроизведение аудио из Base64
+        if (place.getAudioBase64() != null && !place.getAudioBase64().isEmpty()) {
+            try {
+                // Конвертация Base64 обратно в временный файл
+                byte[] audioBytes = base64ToBytes(place.getAudioBase64());
+                File tempAudio = File.createTempFile("playback_", ".m4a", context.getCacheDir());
+                try (FileOutputStream fos = new FileOutputStream(tempAudio)) {
+                    fos.write(audioBytes);
+                }
+
+                // Установка источника для MediaPlayer
+                mediaPlayer.setDataSource(tempAudio.getAbsolutePath());
+                mediaPlayer.setOnPreparedListener(mp -> {
+                    Objects.requireNonNull(seekBar).setMax(mediaPlayer.getDuration());
+                    // Удаление временного файла
+                    tempAudio.delete();
+                });
                 mediaPlayer.prepareAsync();
+
+                // Установка слушателя для удаления файла после выхода
+                mediaPlayer.setOnCompletionListener(mp -> {
+                    if (tempAudio.exists()) {
+                        tempAudio.delete();
+                    }
+                });
+
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
-
         Runnable updateSeekBar = new Runnable() {
             @SuppressLint("DefaultLocale")
             @Override
@@ -293,6 +329,17 @@ public class MapService implements GoogleMap.OnMapClickListener,
             if (isRecording && recorder != null) {
                 stopRecording(place);
                 isRecording = false;
+            }
+
+            //Очистка временных файлов
+            File cacheDir = context.getCacheDir();
+            if (cacheDir.exists() && cacheDir.isDirectory()) {
+                File[] files = cacheDir.listFiles((dir, name) -> name.startsWith("playback_"));
+                if (files != null) {
+                    for (File file : files) {
+                        file.delete();
+                    }
+                }
             }
         });
 
@@ -346,7 +393,17 @@ public class MapService implements GoogleMap.OnMapClickListener,
         query.findInBackground((objects, e) -> {
             if (e == null) {
                 for (ParseObject obj : objects) {
-                    Place place = Place.fromParseObject(obj);
+                    Place place = new Place(
+                            obj.getString("name"),
+                            new LatLng(
+                                    obj.getDouble("latitude"),
+                                    obj.getDouble("longitude")
+                            )
+                    );
+
+                    place.setAudioBase64(obj.getString("audioBase64"));
+                    place.setImageBase64(obj.getString("imageBase64"));
+                    place.setObjectId(obj.getObjectId());
 
                     Marker marker = googleMap.addMarker(
                             new MarkerOptions()
@@ -357,6 +414,8 @@ public class MapService implements GoogleMap.OnMapClickListener,
                     Objects.requireNonNull(marker).setTag(place);
                     markers.add(marker);
                 }
+            } else {
+                Log.e("PARSE", "Ошибка загрузки маркеров", e);
             }
         });
 
@@ -396,7 +455,7 @@ public class MapService implements GoogleMap.OnMapClickListener,
         if (s.length() < 5) return 3;
         return 0;
     }
-    private void startRecording(TextView recordTimer, Place place) {
+    private void startRecording(TextView recordTimer) {
         try {
             audioTemplate = File.createTempFile(
                     "audio_" + System.currentTimeMillis(),
@@ -456,7 +515,6 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
             if (place == null || audioTemplate == null) return;
 
-
             if (recordSeconds < 5) {
                 audioTemplate.delete();
                 Toast.makeText(context,
@@ -465,18 +523,19 @@ public class MapService implements GoogleMap.OnMapClickListener,
                 return;
             }
 
-            ParseFile audioFile = new ParseFile(audioTemplate);
-            audioFile.saveInBackground((SaveCallback) e -> {
-                if (e == null) {
-                    place.setAudioFile(audioFile);
-                    Log.d("VOICE", "Аудио готово к сохранению");
-                }
-                else {
-                    e.printStackTrace();
-                }
-            });
-            place.setAudioFile(audioFile);
+            try {
+                // Конвертация аудио в Base64
+                String audioBase64 = fileToBase64(audioTemplate);
+                place.setAudioBase64(audioBase64);
+                Toast.makeText(context, "Voice message has been attached", Toast.LENGTH_SHORT).show();
+                Log.d("VOICE", "Аудио конвертировано в Base64, длина: " + audioBase64.length());
 
+                // Удаление временного файла
+                audioTemplate.delete();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(context, "Ошибка конвертации аудио", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -492,34 +551,11 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
     }
 
-    public void uriToParseFile(Context context, Uri uri, Place place) throws IOException {
-        InputStream inputStream = context.getContentResolver().openInputStream(uri);
-        if (inputStream == null) throw new IOException("Cannot open input stream");
-
-        File tempFile = File.createTempFile("upload_", ".jpg", context.getCacheDir());
-        OutputStream outputStream = new FileOutputStream(tempFile);
-
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, read);
-        }
-
-        inputStream.close();
-        outputStream.flush();
-        outputStream.close();
-
-        ParseFile imageFile = new ParseFile(tempFile);
-        imageFile.saveInBackground((SaveCallback)e -> {
-            if (e == null) {
-                Log.d("IMAGE", "IS READY TO UPLOAD");
-                place.setImageFile(imageFile);
-            }
-            else {
-                e.printStackTrace();
-            }
-        });
-
+    public void uriToBase64(Uri uri, Place place) throws IOException {
+        // Конвертация uri изображения в Base64-формат
+        String imageBase64 = uriToBase64(uri);
+        place.setImageBase64(imageBase64);
+        Log.d("IMAGE", "Изображение конвертировано в Base64, длина: " + imageBase64.length());
     }
 
     public void setUri(Uri uri) {
@@ -528,5 +564,34 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
     public Uri getUri() {
         return uri;
+    }
+
+    // Конвертация аудио в Base64-формат
+    private String fileToBase64(File file) throws IOException {
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] bytes = new byte[(int) file.length()];
+        inputStream.read(bytes);
+        inputStream.close();
+        return android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT);
+    }
+
+    // Конвертация URI изображения в Base64
+    private String uriToBase64(Uri uri) throws IOException {
+        InputStream inputStream = context.getContentResolver().openInputStream(uri);
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = Objects.requireNonNull(inputStream).read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+
+        inputStream.close();
+        byte[] bytes = byteBuffer.toByteArray();
+        return android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT);
+    }
+
+    private byte[] base64ToBytes(String base64) {
+        return android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
     }
 }
