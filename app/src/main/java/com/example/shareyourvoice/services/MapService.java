@@ -163,12 +163,8 @@ public class MapService implements GoogleMap.OnMapClickListener,
 
             });
 
-            Objects.requireNonNull(btnDelete).setOnClickListener(view -> {
-                Objects.requireNonNull(marker).remove();
-                markers.remove(marker);
-                dialog.dismiss();
-
-            });
+            Objects.requireNonNull(btnDelete).setOnClickListener(view ->
+                    ((CreateMarkerDialog)dialog).deleteDismiss(marker, markers));
 
             Objects.requireNonNull(btnPlace).setOnClickListener(view -> {
                 String name = Objects.requireNonNull(etName).getText().toString();

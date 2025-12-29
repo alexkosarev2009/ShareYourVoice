@@ -19,4 +19,9 @@
     <string name="parse_error">Marker Placement Error\n</string>
     <string name="audio_error">Record a voice message!\n</string>
     <string name="stopRecordingWarning">finish recording!</string>
+    <string name="startMap">Start</string>
+    <string name="delete_this_marker">Delete this marker?</string>
+    <string name="don_t_save_this_marker">Don\'t save this marker?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.example.shareyourvoice;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -15,6 +17,8 @@ import androidx.core.view.WindowInsetsCompat;
 public class MainActivity extends AppCompatActivity {
     Button button;
 
+    private Animator pulseAnimator;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,9 +32,14 @@ public class MainActivity extends AppCompatActivity {
 
         button = findViewById(R.id.button);
         button.setOnClickListener(v -> {
+            pulseAnimator.cancel();
             startActivity(new Intent(this, MapActivity.class));
             finish();
         });
+
+        pulseAnimator = AnimatorInflater.loadAnimator(this, R.animator.pulse);
+        pulseAnimator.setTarget(button);
+        pulseAnimator.start();
     }
 
     @NonNull

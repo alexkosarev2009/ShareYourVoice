@@ -19,4 +19,9 @@
     <string name="parse_error">Ошибка при установке маркера</string>
     <string name="audio_error">Запишите голосовое!</string>
     <string name="stopRecordingWarning">Закончите запись!</string>
+    <string name="startMap">Начать</string>
+    <string name="delete_this_marker">Удалить маркер?</string>
+    <string name="don_t_save_this_marker">Не сохранять маркер?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
 </resources>
